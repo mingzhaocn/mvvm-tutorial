@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MVVMPattern</title>
+</head>
+<body>
+<div>
+    <h1>Data:</h1>
+    <div id="app">
+        {{message}}
+    </div>
+
+</div>
+<script>
+  //http://draveness.me/mvx.html
+
+  const Model = {
+    data: {},
+    subs: [],
+    subscribe(cb) {
+      Model.subs.push(cb);
+    },
+    notify(oldVal, newVal) {
+      Model.subs.forEach(cb => {
+        cb();
+      })
+    }
+  };
+  Object.defineProperty(Model.data, 'message', {
+    get() {
+      return val;
+    },
+    set(newVal) {
+      val = newVal;
+      Model.notify(val, newVal);
+    }
+  })
+  Model.data.message = 'please wait for 3s'
+
+  const View = {
+    $el: {},
+    $state: {},
+    render(el, state) {
+      View.$el = el;
+      View.$state = state;
+      //仅实现 textContent 的情况
+      const regExp = /\{\{(.*)\}\}/;
+      const exp = regExp.test(el.textContent);
+      el.textContent = state.getValue(RegExp.$1)
+    },
+    update() {
+      View.render(View.$el, View.$state);
+    }
+  };
+
+  const ViewModel = {
+    state: {
+      getValue(exp) {
+        return Model.data[exp]
+      }
+    },
+    update() {
+      View.update();
+    }
+  };
+  Model.subscribe(ViewModel.update)
+
+
+  View.render(
+    document.querySelector('#app'),
+    ViewModel.state
+  )
+
+  // 模拟 model change
+  setTimeout(() => {
+    Model.data.message = 'thank you for your waiting '
+  }, 3000)
+
+
+</script>
+</body>
+</html>
